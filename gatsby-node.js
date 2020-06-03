@@ -5,3 +5,48 @@
  */
 
 // You can delete this file if you're not using it
+
+const path = require ('path');
+
+//Query for nodes to use in creating pages
+const makeRequest = (graphql, request) => new Promise((resolve, reject) => {
+    resolve(
+        graphql(request).then(result => {
+            if (result.errors){
+                reject(result.errors)
+            }
+        return result;
+        })
+    )
+});
+
+//Implement the Gatsby API "createPages". This is called once the 
+//data layer is bootsrapped  to let plugins create from data
+exports.createPages = ({boundActionCreators, graphql }) => {
+    const { createPage } = boundActionCreators;
+
+    const getArticles = makeRequest(graphql,`
+        {
+            allStrapiArticle {
+                edges {
+                    node {
+                        id
+                    }
+                }
+            }
+        }`).then(result => {
+            //Create pages for each article
+            result.data.allStrapiArticle.edges.forEach(({node}) => {
+                createPage({
+                    path: `/${node.id}`,
+                    component: path.resolve(`src/templates/article.js`),
+                    context: {
+                        id: node.id,
+                    },
+                })
+            })
+        })
+
+        //Query for articles nodes to use in creating pages
+        return getArticles;
+}
